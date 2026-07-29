@@ -1,0 +1,34 @@
+---
+# see: https://kitchen.ci/docs/drivers/dokken/
+#
+# vanilla: public Debian 13 (trixie) image from Docker Hub. hardened: Debian
+# has no Iron Bank-style hardened base image; the image is ENV-overridable and
+# defaults to the public image until the hardened-suite source decision lands
+# (card debian-13-stig-baseline-2p9.4).
+
+provisioner:
+  name: dummy
+
+driver:
+  name: dokken
+  pull_platform_image: false
+
+transport:
+  name: dokken
+
+platforms:
+  - name: debian-13
+
+suites:
+  - name: vanilla
+    driver:
+      image: <%= ENV['VANILLA_CONTAINER_IMAGE'] || "docker.io/library/debian:13" %>
+    verifier:
+      input_files:
+        - container.vanilla.inputs.yml
+  - name: hardened
+    driver:
+      image: <%= ENV['HARDENED_CONTAINER_IMAGE'] || "docker.io/library/debian:13" %>
+    verifier:
+      input_files:
+        - container.hardened.inputs.yml

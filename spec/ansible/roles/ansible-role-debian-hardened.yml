@@ -1,0 +1,16 @@
+---
+# Hardened Debian 13 suite — PLACEHOLDER, NOT YET HARDENED.
+#
+# The hardening role is an open decision (beads card
+# debian-13-stig-baseline-2p9.4): no DISA STIG remediation playbook exists for
+# Debian, so a CIS-style role will likely stand in, as SUSE15-CIS does for the
+# SLES profile. Until that lands, this playbook applies only the vanilla prep so
+# the hardened suite exercises the full pipeline (converge -> verify ->
+# thresholds) against a stock box. The hardened threshold stays at
+# compliance.min 0 partly for this reason — do not raise it while this
+# placeholder is in play.
+- hosts:
+    - localhost
+  roles:
+    - roles/ansible-role-debian-vanilla
+  serial: 50

@@ -8,3 +8,37 @@
 # Beads issue tracker: local Dolt DB + refs/dolt/data on the remote.
 # Nothing under .beads needs to be tracked; keep it out of the diff.
 .beads/
+
+saf-cli.log
+*-xccdf.xml
+
+# Test Kitchen / InSpec / CI artifacts
+.kitchen
+.kitchen.local.yml
+kitchen.local.yml
+spec/results/**
+vendor/**
+inspec.lock
+
+# Gemfile.lock is intentionally untracked so CI resolves the newest gems
+# within the Gemfile's pins (see comments in Gemfile).
+Gemfile.lock
+
+# Downloaded CI VM images / scratch
+*.qcow2
+disk.raw
+disk.qcow2
+metadata.tar
+metadata.yaml
+cloud-init.yaml
+
+.DS_Store
+*.gem
+.byebug_history
+.vscode
+
+# Local bundler path config (sandbox: gems install to .bundle, not rbenv global)
+.bundle/
+
+# Repo-local rubocop cache (see Rakefile)
+.rubocop-cache/

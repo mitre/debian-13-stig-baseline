@@ -1,0 +1,9 @@
+---
+# Inputs applied to every Test Kitchen verify run (VM suites).
+#
+# This profile inherits its inputs from the upstream Canonical Ubuntu 24.04 LTS
+# STIG baseline (see inspec.yml depends). Some upstream defaults are
+# Ubuntu-shaped (e.g. sudo_accounts defaults to ["ubuntu"], while Debian cloud
+# images use a "debian" user); Debian-appropriate overrides land here alongside
+# the overlay control work (cards 2p9.2 / 2p9.3). Values set here override the
+# defaults declared upstream at scan time.

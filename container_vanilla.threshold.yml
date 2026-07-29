@@ -1,0 +1,11 @@
+# Pass/fail gate for the Debian 13 "vanilla" container scan.
+#
+# compliance.min is 0 while the overlay is being stood up. Container scans
+# naturally score differently from VM scans (many host/kernel/bootloader
+# controls are not applicable in a container), so tune this independently from
+# the VM thresholds once controls and container-aware inputs are in place.
+compliance:
+  min: 0
+error:
+  total:
+    max: 0

@@ -1,0 +1,13 @@
+# Pass/fail gate for the LXD VM "vanilla" (unhardened Debian 13) scan.
+#
+# compliance.min is 0 while the overlay is being stood up — the upstream
+# Ubuntu 24.04 controls are not yet confirmed to execute on Debian (card
+# 2p9.2) and Ubuntu-specific controls are not yet dispositioned (card 2p9.3).
+# Raise this once the overlay runs end to end to lock in expected vanilla
+# compliance and catch regressions. error.total.max stays 0: a control that
+# errors is a bug in the control, never an acceptable result.
+compliance:
+  min: 0
+error:
+  total:
+    max: 0

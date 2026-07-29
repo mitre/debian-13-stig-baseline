@@ -1,0 +1,13 @@
+roles: []
+  # No hardening role yet: no DISA STIG remediation playbook exists for Debian,
+  # and the stand-in role (likely a CIS benchmark role, as SUSE15-CIS is for the
+  # SLES profile) is an open decision — see the beads board, card
+  # debian-13-stig-baseline-2p9.4. It gets added here when that decision lands.
+
+collections:
+  - name: community.general
+    source: https://galaxy.ansible.com
+  - name: community.crypto
+    source: https://galaxy.ansible.com
+  - name: ansible.posix
+    source: https://galaxy.ansible.com

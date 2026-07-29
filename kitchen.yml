@@ -1,0 +1,19 @@
+---
+verifier:
+  name: inspec
+  sudo: true
+  reporter:
+    - cli
+    - json:spec/results/%{platform}_%{suite}.json
+  inspec_tests:
+    - name: Debian 13 STIG-ready baseline
+      path: .
+  input_files:
+    - kitchen.inputs.yml
+  <% if ENV['INSPEC_CONTROL'] %>
+  controls:
+    - "<%= ENV['INSPEC_CONTROL'] %>"
+  <% end %>
+  load_plugins: true
+  env_vars:
+    - "CHEF_LICENSE=<%= ENV['CHEF_LICENSE'] %>"
