@@ -183,6 +183,25 @@ jobs:
       - name: Run kitchen test
         run: bundle exec kitchen test --destroy=always ${{ matrix.suite }}-${{ env.PLATFORM }} || true
 
+      - name: Kitchen diagnostics
+        # The kitchen step above swallows its exit code so the summary and
+        # threshold steps can fail meaningfully; this step preserves the
+        # evidence those steps can't see. Kitchen's file logs keep the full
+        # converge/verify error text even when the CI stdout stream loses it
+        # (e.g. the SSH channel dying mid-converge), and the LXD state shows
+        # whether the VM was still alive afterwards.
+        if: always()
+        continue-on-error: true
+        run: |
+          echo "=== LXD state ==="
+          lxc list || true
+          lxc info "${{ matrix.suite }}-${{ env.PLATFORM }}" 2>/dev/null || echo "(instance already destroyed)"
+          echo "=== kitchen logs ==="
+          for f in .kitchen/logs/*.log; do
+            echo "--- $f (last 200 lines)"
+            tail -200 "$f" || true
+          done
+
       - name: Save results summary JSON
         continue-on-error: true
         uses: mitre/saf_action@a19f76ed3721c14aa8a1afb8eded117d8bf16a5d  # v1.9.0
