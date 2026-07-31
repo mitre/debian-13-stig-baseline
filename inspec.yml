@@ -14,6 +14,7 @@ supports:
 depends:
   - name: canonical-ubuntu-24.04-lts-stig-baseline
     git: https://github.com/mitre/canonical-ubuntu-24.04-lts-stig-baseline.git
-    # Track main until the upstream cuts a tagged release that includes the
-    # debian entry in its supports list; then pin to that tag.
-    branch: main
+    # Interim: track the upstream's open patch branch, which carries fixes
+    # this profile depends on (broken-test repairs, version correction).
+    # Replace with a tag pin once the branch merges and a release is cut.
+    branch: "1.4.1"
