@@ -90,6 +90,12 @@ lifecycle:
         # not via ansible_binary_path, so expose the venv binaries on PATH.
         sudo ln -sf /opt/ansible-venv/bin/ansible /opt/ansible-venv/bin/ansible-playbook /opt/ansible-venv/bin/ansible-galaxy /opt/ansible-venv/bin/ansible-doc /opt/ansible-venv/bin/ansible-config /usr/local/bin/
         echo ""
+        echo "+++ Unlocking the kitchen user password +++"
+        # The image bake sets a password so the account is not locked, but
+        # cloud-init's first-boot handling of the image's default user
+        # (lock_passwd: true) re-locks it, which hardening-role prelims
+        # rightly refuse. Strip the lock; the baked password remains.
+        sudo usermod -U <%= ENV.fetch("LXD_VM_USERNAME", "debian") %>
         echo "+++ Keeping the kitchen sudo user usable after the hardening phase +++"
         sudo chage -d $(( $( date +%s ) / 86400 )) <%= ENV.fetch("LXD_VM_USERNAME", "debian") %> || true
         echo ""
