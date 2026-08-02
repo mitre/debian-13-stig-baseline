@@ -18,3 +18,12 @@ depends:
     # this profile depends on (broken-test repairs, version correction).
     # Replace with a tag pin once the branch merges and a release is cut.
     branch: "1.4.1"
+
+inputs:
+  # Debian's cloud-image default user; sites override with their real admin
+  # accounts.
+  - name: sudo_accounts
+    description: Array of users who need access to security functions are part of the sudo group.
+    type: Array
+    value: ["debian"]
+    profile: canonical-ubuntu-24.04-lts-stig-baseline
