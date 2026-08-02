@@ -1,11 +1,8 @@
 # Pass/fail gate for the LXD VM "hardened" Debian 13 scan.
 #
-# compliance.min is 0 while the overlay is being stood up and the hardening
-# role is undecided (card 2p9.4 — no STIG remediation playbook exists for
-# Debian, so a CIS role will likely stand in, as SUSE15-CIS does for the SLES
-# profile). Once the role is wired, raise this toward the compliance a
-# hardened box should achieve against the baseline so the pipeline guards
-# against hardening/control regressions. error.total.max stays 0.
+# compliance.min is 0 until the DEBIAN13-CIS hardened suite (card 2p9.4) has
+# a first clean CI run to pin the floor from, as on debian-11/12.
+# error.total.max stays 0.
 compliance:
   min: 0
 error:

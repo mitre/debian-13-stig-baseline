@@ -1,16 +1,43 @@
 ---
-# Hardened Debian 13 suite — PLACEHOLDER, NOT YET HARDENED.
+# Hardened Debian 13 suite.
 #
-# The hardening role is an open decision (beads card
-# debian-13-stig-baseline-2p9.4): no DISA STIG remediation playbook exists for
-# Debian, so a CIS-style role will likely stand in, as SUSE15-CIS does for the
-# SLES profile. Until that lands, this playbook applies only the vanilla prep so
-# the hardened suite exercises the full pipeline (converge -> verify ->
-# thresholds) against a stock box. The hardened threshold stays at
-# compliance.min 0 partly for this reason — do not raise it while this
-# placeholder is in play.
+# No DISA STIG remediation playbook exists for Debian; ansible-lockdown ships
+# only the CIS benchmark role (DEBIAN13-CIS). CIS is not the STIG, but it is
+# the closest available automated hardening baseline for Debian 13, so we use
+# it to get the box into a hardened state. The InSpec profile here still
+# validates against the STIG — the CIS role just ensures the scan runs against
+# a hardened target rather than a stock image.
 - hosts:
     - localhost
   roles:
     - roles/ansible-role-debian-vanilla
+    - roles/DEBIAN13-CIS
   serial: 50
+  become: yes
+  vars:
+    # kitchen-ansible launches the play via `sudo -E -s`, which preserves
+    # HOME=/home/<user> into the root-run ansible process. The role's async
+    # aideinit task (6.3.x) then writes its job-status file under one HOME
+    # while the poller resolves ~/.ansible_async under the other, and the
+    # task dies with "could not find job" on a job that is running fine
+    # (bit debian-12 deterministically). Pin the async dir so both sides
+    # agree.
+    ansible_async_dir: /var/tmp/.ansible_async
+    # Variable names verified against the role's 1.0.1 defaults (prefix
+    # deb13cis_). The role's defaults already skip reboots, the grub
+    # password, and its goss audit, so only the deltas below are needed.
+    # Level 1 only for the first hardened baseline; enable level 2 once the
+    # level-1 run is stable in CI.
+    deb13cis_level_2: false
+    # CIS 5.4.2.4 wants root account access controlled (password set or
+    # locked-with-conditions); the STIG (and cloud images) keep root LOCKED.
+    # Skip the CIS rule so the box stays STIG-shaped; the CI VM is a
+    # bellwether, so the only cost is a marginally less representative scan.
+    deb13cis_rule_5_4_2_4: false
+    # Rule 5.2.4 rewrites NOPASSWD -> PASSWD in sudoers for every account not
+    # on this list, which would strip the Kitchen login user's passwordless
+    # sudo and kill the InSpec verify (sudo over a non-TTY SSH session cannot
+    # prompt). The surviving NOPASSWD entry is still reported as a finding by
+    # the profile — a test-harness artifact.
+    deb13cis_sudoers_exclude_nopasswd_list:
+      - debian

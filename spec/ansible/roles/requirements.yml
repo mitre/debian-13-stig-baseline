@@ -1,8 +1,13 @@
-roles: []
-  # No hardening role yet: no DISA STIG remediation playbook exists for Debian,
-  # and the stand-in role (likely a CIS benchmark role, as SUSE15-CIS is for the
-  # SLES profile) is an open decision — see the beads board, card
-  # debian-13-stig-baseline-2p9.4. It gets added here when that decision lands.
+roles:
+  # CIS benchmark remediation for Debian 13 — used by the hardened LXD suite
+  # because no DISA STIG remediation playbook exists for Debian. See
+  # ansible-role-debian-hardened.yml. Pinned to 1.0.1 (newest release); its
+  # min_ansible_version 2.16.1 is satisfied by the trixie kitchen venv's
+  # ansible-core 2.18 pin. Decision record: beads card
+  # debian-13-stig-baseline-2p9.4.
+  - name: DEBIAN13-CIS
+    src: https://github.com/ansible-lockdown/DEBIAN13-CIS
+    version: 1.0.1
 
 collections:
   - name: community.general
