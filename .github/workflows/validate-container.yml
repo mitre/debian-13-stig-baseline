@@ -6,11 +6,10 @@ on:
     branches:
       - main
 
-# Scans public Debian 13 (trixie) images from Docker Hub via kitchen-dokken.
-# Both suites currently default to the same public image: Debian has no Iron
-# Bank-style hardened base image, so the hardened suite's image source is an
-# open decision (card debian-13-stig-baseline-2p9.4) and is ENV-overridable
-# via HARDENED_CONTAINER_IMAGE until it lands.
+# Scans Debian 13 (trixie) container images via kitchen-dokken. vanilla: the
+# public Docker Hub image. hardened: the Iron Bank Debian image (decision
+# record on card debian-13-stig-baseline-2p9.4), pulled with the org-level
+# SAF_IRONBANK_* credentials shared with the Ubuntu profiles.
 
 jobs:
   validate:
@@ -24,14 +23,14 @@ jobs:
       PLATFORM: "debian-13"
       DEPLOYMENT: "container"
       VANILLA_CONTAINER_IMAGE: "docker.io/library/debian:13"
-      HARDENED_CONTAINER_IMAGE: "docker.io/library/debian:13"
+      HARDENED_CONTAINER_IMAGE: "registry1.dso.mil/ironbank/opensource/debian/debian:13"
     strategy:
       matrix:
         include:
           - suite: vanilla
             hardening: none
           - suite: hardened
-            hardening: undecided  # pending card debian-13-stig-baseline-2p9.4
+            hardening: ironbank
       fail-fast: false
     steps:
       - name: add needed packages
@@ -70,6 +69,17 @@ jobs:
 
       - name: Vendor the Profile
         run: bundle exec cinc-auditor vendor . --overwrite
+
+      - name: Log in to Registry One
+        # Same org-level Iron Bank pull credentials the Ubuntu profiles use;
+        # gated to the hardened suite so vanilla (Docker Hub) runs and
+        # secretless fork PRs are unaffected.
+        if: matrix.suite == 'hardened'
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ secrets.SAF_IRONBANK_REGISTRY }}
+          username: ${{ secrets.SAF_IRONBANK_CLI_USERNAME }}
+          password: ${{ secrets.SAF_IRONBANK_CLI_TOKEN }}
 
       - name: Pre-pull the container image
         # kitchen.container.yml sets pull_platform_image: false and uses the

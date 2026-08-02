@@ -8,5 +8,6 @@
 # which apply, so the container scan reports cleanly rather than erroring on
 # absent subsystems.
 #
-# The hardened image source is undecided (card debian-13-stig-baseline-2p9.4);
-# image-specific inputs land once that decision is made.
+# The hardened image is the Iron Bank Debian image (decision record on card
+# debian-13-stig-baseline-2p9.4); image-specific inputs land here as its scan
+# behavior is observed.
