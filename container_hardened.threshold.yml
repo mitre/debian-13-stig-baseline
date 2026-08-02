@@ -1,10 +1,5 @@
-# Pass/fail gate for the Debian 13 "hardened" container scan.
-#
-# compliance.min is 0 until the Iron Bank hardened image (card 2p9.4) has a
-# first clean CI run to pin the floor from. Tune independently from the VM
-# thresholds.
 compliance:
-  min: 0
+  min: 54
 error:
   total:
     max: 0

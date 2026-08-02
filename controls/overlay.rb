@@ -25,8 +25,8 @@ include_controls 'canonical-ubuntu-24.04-lts-stig-baseline' do
       !%w[docker podman kubepods lxc].include?(virtualization.system)
     }
 
-    describe command('grep -i 1 /proc/sys/crypto/fips_enabled') do
-      its('stdout') { should match('1') }
+    describe kernel_parameter('crypto.fips_enabled') do
+      its('value') { should eq 1 }
     end
 
     describe 'NIST FIPS-validated cryptographic modules' do
@@ -134,7 +134,7 @@ include_controls 'canonical-ubuntu-24.04-lts-stig-baseline' do
     keynames = input('audit_rule_keynames').merge(input('audit_rule_keynames_overrides'))
     keyname = keynames[audit_target] || keynames['/var/log/faillog']
 
-    describe 'Command' do
+    describe 'Audit watch' do
       it "#{audit_target} is audited properly" do
         audit_rule = auditd.file(audit_target)
         expect(audit_rule).to exist
@@ -156,7 +156,7 @@ include_controls 'canonical-ubuntu-24.04-lts-stig-baseline' do
     keynames = input('audit_rule_keynames').merge(input('audit_rule_keynames_overrides'))
     keyname = keynames[audit_target] || keynames['/var/log/lastlog']
 
-    describe 'Command' do
+    describe 'Audit watch' do
       it "#{audit_target} is audited properly" do
         audit_rule = auditd.file(audit_target)
         expect(audit_rule).to exist
@@ -179,7 +179,7 @@ include_controls 'canonical-ubuntu-24.04-lts-stig-baseline' do
     keynames = input('audit_rule_keynames').merge(input('audit_rule_keynames_overrides'))
     keyname = keynames[audit_target] || keynames['/var/log/wtmp']
 
-    describe 'Command' do
+    describe 'Audit watch' do
       it "#{audit_target} is audited properly" do
         audit_rule = auditd.file(audit_target)
         expect(audit_rule).to exist

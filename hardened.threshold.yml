@@ -1,10 +1,5 @@
-# Pass/fail gate for the LXD VM "hardened" Debian 13 scan.
-#
-# compliance.min is 0 until the DEBIAN13-CIS hardened suite (card 2p9.4) has
-# a first clean CI run to pin the floor from, as on debian-11/12.
-# error.total.max stays 0.
 compliance:
-  min: 0
+  min: 40
 error:
   total:
     max: 0
