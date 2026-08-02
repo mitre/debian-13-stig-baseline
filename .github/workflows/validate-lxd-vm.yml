@@ -202,6 +202,18 @@ jobs:
             tail -200 "$f" || true
           done
 
+      - name: Upload kitchen logs
+        # The inline dump above is subject to GitHub's per-line log truncation
+        # (~64KB), which can hide everything after one oversized line; the
+        # artifact is byte-exact.
+        if: always()
+        continue-on-error: true
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f  # v6.0.0
+        with:
+          name: kitchen-logs-${{ matrix.suite }}
+          path: .kitchen/logs/
+          if-no-files-found: ignore
+
       - name: Save results summary JSON
         continue-on-error: true
         uses: mitre/saf_action@a19f76ed3721c14aa8a1afb8eded117d8bf16a5d  # v1.9.0

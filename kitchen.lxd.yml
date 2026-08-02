@@ -23,7 +23,12 @@ provisioner:
   require_pip3: false
   ansible_binary_path: /opt/ansible-venv/bin
   ansible_connection: local
-  ansible_verbose: true
+  # Verbose ansible prints each task's full result, and package_facts emits
+  # that as a single multi-megabyte line — which GitHub truncates its step
+  # log at, hiding everything after it (including real failures). Ansible
+  # prints fatal/failed task output regardless of verbosity, so failure
+  # diagnostics survive without it.
+  ansible_verbose: false
   roles_path: spec/ansible/roles
   galaxy_ignore_certs: true
   requirements_path: spec/ansible/roles/requirements.yml
