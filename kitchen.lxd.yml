@@ -85,9 +85,8 @@ lifecycle:
         # (trixie marks the system Python externally managed, so a venv is
         # required for pip installs anyway). trixie's Python is 3.13; the
         # ansible-core 2.18 series supports controller Python 3.11-3.13, which
-        # is current enough for modern hardening roles. Revisit alongside the
-        # hardening-role decision (card debian-13-stig-baseline-2p9.4) if the
-        # chosen role needs a different series.
+        # is current enough for modern hardening roles. Revisit if the
+        # hardening role needs a different series.
         sudo python3 -m venv /opt/ansible-venv
         sudo /opt/ansible-venv/bin/pip install --upgrade pip
         sudo /opt/ansible-venv/bin/pip install "ansible-core>=2.18,<2.19"

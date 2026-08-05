@@ -7,9 +7,8 @@ on:
       - main
 
 # Scans Debian 13 (trixie) container images via kitchen-dokken. vanilla: the
-# public Docker Hub image. hardened: the Iron Bank Debian image (decision
-# record on card debian-13-stig-baseline-2p9.4), pulled with the org-level
-# SAF_IRONBANK_* credentials shared with the Ubuntu profiles.
+# public Docker Hub image. hardened: the Iron Bank Debian image, pulled with
+# the org-level SAF_IRONBANK_* credentials shared with the Ubuntu profiles.
 
 jobs:
   validate:

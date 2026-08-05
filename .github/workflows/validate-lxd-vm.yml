@@ -110,7 +110,7 @@ jobs:
           # Give the user a random (unused) password so its shadow field isn't "!"
           # (locked). SSH stays key-only, but hardening roles commonly refuse to
           # manage an account they see as locked (the SUSE15-CIS role does; the
-          # Debian role chosen on card 2p9.4 may too), so keep the account
+          # Debian role may too), so keep the account
           # visibly unlocked from the start.
           virt-customize --no-network -a disk.qcow2 \
             --ssh-inject "$U:file:$KITCHEN_SSH_PUB" \

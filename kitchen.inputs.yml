@@ -5,5 +5,5 @@
 # STIG baseline (see inspec.yml depends). Some upstream defaults are
 # Ubuntu-shaped (e.g. sudo_accounts defaults to ["ubuntu"], while Debian cloud
 # images use a "debian" user); Debian-appropriate overrides land here alongside
-# the overlay control work (cards 2p9.2 / 2p9.3). Values set here override the
+# the overlay control work. Values set here override the
 # defaults declared upstream at scan time.

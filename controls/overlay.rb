@@ -1,25 +1,6 @@
-# Debian 13 overlay of the Canonical Ubuntu 24.04 LTS STIG baseline.
-#
-# All controls from the upstream profile are included as-is except the spot
-# overrides below, which implement the dispositions ruled on the 2p9.3 audit
-# card (see its notes for the full control-status table and decision record).
-#
-# A control block inside include_controls REPLACES the upstream control's
-# checks (verified empirically), so a control is only overlaid when its
-# behavior on Debian must actually differ; anything that would merely add
-# commentary runs pure upstream, with the nuance documented in the README
-# (see "FIPS 140 on Debian" for the FIPS-family controls SV-270667,
-# SV-270668, SV-270669, SV-270670, SV-270671, and SV-270739, which verify
-# approved-algorithm configuration and run unmodified here).
 include_controls 'canonical-ubuntu-24.04-lts-stig-baseline' do
-  # SV-270744: the requirement is NIST FIPS-*validated* cryptography. On
-  # Ubuntu, fips_enabled=1 implies the Ubuntu Pro validated module stack; on
-  # Debian the same flag is reachable with stock, uncertified builds, so the
-  # upstream proxy check would pass misleadingly. Ruling (ported from
-  # debian-12's SV-260650): keep the kernel check as posture evidence and ADD
-  # an assertion that always fails on Debian — a deliberate standing CAT I
-  # finding so this profile never presents an uncertified platform as
-  # FIPS-validated.
+  # SV-270744: Debian ships no FIPS-validated modules, so this keeps the
+  # kernel-flag evidence but always fails; see README, "FIPS 140 on Debian".
   control 'SV-270744' do
     only_if('This control is Not Applicable to containers', impact: 0.0) {
       !%w[docker podman kubepods lxc].include?(virtualization.system)
@@ -36,13 +17,8 @@ include_controls 'canonical-ubuntu-24.04-lts-stig-baseline' do
     end
   end
 
-  # SV-278917: the upstream control verifies Ubuntu 24.04's identity and
-  # support lifecycle (standard support -> Ubuntu Pro ESM). Rewritten for
-  # Debian 13's identity and published lifecycle: Debian LTS covers trixie
-  # through 2030-06-30 (free, part of the regular archive); beyond that,
-  # Extended LTS (Freexian ELTS, commercial) runs through 2035-06-30 via its
-  # own apt repository — the Debian analog of the upstream's `pro status`
-  # subscription branch.
+  # SV-278917: rewritten for Debian 13's identity and published lifecycle —
+  # free Debian LTS to 2030-06-30, then Freexian Extended LTS to 2035-06-30.
   control 'SV-278917' do
     only_if('This control is Not Applicable to containers', impact: 0.0) {
       !%w[docker podman kubepods lxc].include?(virtualization.system)
@@ -65,8 +41,7 @@ include_controls 'canonical-ubuntu-24.04-lts-stig-baseline' do
         end
       end
     elsif now <= elts_eol
-      # Beyond free LTS; vendor support requires the commercial Freexian
-      # Extended LTS repository to be configured.
+      # Past free LTS: vendor support requires the commercial Freexian ELTS repo.
       elts_sources = command('grep -rsiE "deb\\.freexian\\.com/extended-lts|extended-lts" /etc/apt/sources.list /etc/apt/sources.list.d/ 2>/dev/null')
 
       describe 'Debian 13 Extended LTS (Freexian) apt source' do
@@ -84,13 +59,8 @@ include_controls 'canonical-ubuntu-24.04-lts-stig-baseline' do
     end
   end
 
-  # SV-270765: the upstream expectation (/var/log group-owned by "syslog") is
-  # an Ubuntu rsyslog packaging convention — Ubuntu's rsyslog runs as the
-  # syslog user and its packaging chgrps /var/log. Debian defines no syslog
-  # group (base-passwd) and ships /var/log as root:root with rsyslog running
-  # as root, so the upstream check can never pass and its fix command cannot
-  # run. Same requirement (SRG-OS-000206: restrict access to error messages),
-  # expressed in Debian's ownership convention.
+  # SV-270765: the "syslog" group on /var/log is an Ubuntu rsyslog packaging
+  # convention; Debian has no syslog group and ships /var/log as root:root.
   control 'SV-270765' do
     describe directory('/var/log') do
       it { should exist }
@@ -98,10 +68,8 @@ include_controls 'canonical-ubuntu-24.04-lts-stig-baseline' do
     end
   end
 
-  # SV-270769: same Ubuntu convention as SV-270765 — Debian has no syslog
-  # user, and Debian's rsyslog writes /var/log/syslog as root. The upstream
-  # not-exist escape is preserved: journald-only systems (the trixie default)
-  # have no /var/log/syslog at all, which upstream treats as passing.
+  # SV-270769: same as SV-270765 — Debian's rsyslog writes /var/log/syslog as
+  # root; the upstream not-exist escape for journald-only systems is preserved.
   control 'SV-270769' do
     only_if('This control is Not Applicable to containers', impact: 0.0) {
       !%w[docker podman kubepods lxc].include?(virtualization.system)
@@ -117,14 +85,8 @@ include_controls 'canonical-ubuntu-24.04-lts-stig-baseline' do
     end
   end
 
-  # SV-270796: trixie's shadow package dropped the faillog tool and nothing
-  # creates /var/log/faillog anymore, so the upstream watch rule targets a
-  # file that never exists. Debian 13 records authentication failures via
-  # pam_faillock in per-user files under /var/run/faillock (faillock.conf
-  # "dir" default), so the audit watch is retargeted there — the directory
-  # must be recreated at boot (e.g. systemd-tmpfiles) for the rule to load.
-  # The expected keyname stays input-driven, falling back to the upstream
-  # path's entry so the stock keyname table applies unchanged.
+  # SV-270796: trixie dropped faillog; auth failures now land in pam_faillock's
+  # /var/run/faillock, so the audit watch is retargeted there.
   control 'SV-270796' do
     only_if('This control is Not Applicable to containers', impact: 0.0) {
       !%w[docker podman kubepods lxc].include?(virtualization.system)
@@ -144,9 +106,8 @@ include_controls 'canonical-ubuntu-24.04-lts-stig-baseline' do
     end
   end
 
-  # SV-270797: trixie removed classic /var/log/lastlog (Y2038) in favor of
-  # lastlog2; the login-tracking database is /var/lib/lastlog/lastlog2.db
-  # (lastlog2(8), trixie manpage), so the audit watch is retargeted there.
+  # SV-270797: trixie replaced lastlog with lastlog2 (Y2038), so the audit
+  # watch is retargeted to /var/lib/lastlog/lastlog2.db.
   control 'SV-270797' do
     only_if('This control is Not Applicable to containers', impact: 0.0) {
       !%w[docker podman kubepods lxc].include?(virtualization.system)
@@ -166,10 +127,9 @@ include_controls 'canonical-ubuntu-24.04-lts-stig-baseline' do
     end
   end
 
-  # SV-270810: trixie removed classic /var/log/wtmp (Y2038) in favor of
-  # wtmpdb; the session database is /var/log/wtmp.db (wtmpdb(8), trixie
-  # manpage), so the audit watch is retargeted there. /var/run/utmp survives
-  # unchanged, so SV-270811 runs pure upstream.
+  # SV-270810: trixie replaced wtmp with wtmpdb (Y2038), so the audit watch is
+  # retargeted to /var/log/wtmp.db; /var/run/utmp survives, so SV-270811 runs
+  # pure upstream.
   control 'SV-270810' do
     only_if('This control is Not Applicable to containers', impact: 0.0) {
       !%w[docker podman kubepods lxc].include?(virtualization.system)
