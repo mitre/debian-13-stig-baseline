@@ -1,0 +1,34 @@
+---
+# see: https://kitchen.ci/docs/drivers/dokken/
+#
+# vanilla: public Debian 13 (trixie) image from Docker Hub. hardened: the Iron
+# Bank Debian image (registry1.dso.mil/ironbank/opensource/debian/debian:13),
+# set via HARDENED_CONTAINER_IMAGE in CI. The local default stays the public
+# image so kitchen runs work without Registry One credentials.
+
+provisioner:
+  name: dummy
+
+driver:
+  name: dokken
+  pull_platform_image: false
+
+transport:
+  name: dokken
+
+platforms:
+  - name: debian-13
+
+suites:
+  - name: vanilla
+    driver:
+      image: <%= ENV['VANILLA_CONTAINER_IMAGE'] || "docker.io/library/debian:13" %>
+    verifier:
+      input_files:
+        - container.vanilla.inputs.yml
+  - name: hardened
+    driver:
+      image: <%= ENV['HARDENED_CONTAINER_IMAGE'] || "docker.io/library/debian:13" %>
+    verifier:
+      input_files:
+        - container.hardened.inputs.yml

@@ -1,0 +1,29 @@
+name: debian-13-stig-baseline
+title: Debian 13 STIG-Ready Baseline
+maintainer: MITRE SAF Team
+copyright: MITRE
+license: Apache-2.0
+summary: "STIG-ready InSpec baseline for Debian 13 (trixie), overlaying the DISA STIG for Canonical Ubuntu 24.04 LTS"
+version: 0.1.0
+inspec_version: ">= 4.0"
+
+supports:
+  - platform-name: debian
+    release: 13.*
+
+depends:
+  - name: canonical-ubuntu-24.04-lts-stig-baseline
+    git: https://github.com/mitre/canonical-ubuntu-24.04-lts-stig-baseline.git
+    # Interim: track the upstream's open patch branch, which carries fixes
+    # this profile depends on (broken-test repairs, version correction).
+    # Replace with a tag pin once the branch merges and a release is cut.
+    branch: "1.4.1"
+
+inputs:
+  # Debian's cloud-image default user; sites override with their real admin
+  # accounts.
+  - name: sudo_accounts
+    description: Array of users who need access to security functions are part of the sudo group.
+    type: Array
+    value: ["debian"]
+    profile: canonical-ubuntu-24.04-lts-stig-baseline

@@ -1,0 +1,130 @@
+name: Debian 13 Container Testing Matrix
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+# Scans Debian 13 (trixie) container images via kitchen-dokken. vanilla: the
+# public Docker Hub image. hardened: the Iron Bank Debian image, pulled with
+# the org-level SAF_IRONBANK_* credentials shared with the Ubuntu profiles.
+
+jobs:
+  validate:
+    name: Validate my profile
+    runs-on: ubuntu-latest
+    env:
+      CHEF_LICENSE: accept-silent
+      CHEF_LICENSE_KEY: ${{ secrets.SAF_CHEF_LICENSE_KEY }}
+      KITCHEN_LOCAL_YAML: kitchen.container.yml
+      LC_ALL: "en_US.UTF-8"
+      PLATFORM: "debian-13"
+      DEPLOYMENT: "container"
+      VANILLA_CONTAINER_IMAGE: "docker.io/library/debian:13"
+      HARDENED_CONTAINER_IMAGE: "registry1.dso.mil/ironbank/opensource/debian/debian:13"
+    strategy:
+      matrix:
+        include:
+          - suite: vanilla
+            hardening: none
+          - suite: hardened
+            hardening: ironbank
+      fail-fast: false
+    steps:
+      - name: add needed packages
+        run: |
+          sudo apt-get update
+          sudo apt -y install jq
+
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Clone full repository so we can push
+        run: git fetch --prune --unshallow
+
+      - name: Generate Short Commit SHA
+        id: vars
+        run: |
+          calculatedSha=$(git rev-parse --short ${{ github.sha }})
+          echo "COMMIT_SHORT_SHA=$calculatedSha" >> $GITHUB_ENV
+
+      - name: Confirm git commit SHA output
+        run: echo ${{ env.COMMIT_SHORT_SHA }}
+
+      - name: Setup Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: "3.3"
+
+      - name: Disable ri and rdoc
+        run: 'echo "gem: --no-ri --no-rdoc" >> ~/.gemrc'
+
+      - name: Run Bundle Install
+        run: bundle install
+
+      - name: Installed Inspec
+        run: bundle exec cinc-auditor version
+
+      - name: Vendor the Profile
+        run: bundle exec cinc-auditor vendor . --overwrite
+
+      - name: Log in to Registry One
+        # Same org-level Iron Bank pull credentials the Ubuntu profiles use;
+        # gated to the hardened suite so vanilla (Docker Hub) runs and
+        # secretless fork PRs are unaffected.
+        if: matrix.suite == 'hardened'
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ secrets.SAF_IRONBANK_REGISTRY }}
+          username: ${{ secrets.SAF_IRONBANK_CLI_USERNAME }}
+          password: ${{ secrets.SAF_IRONBANK_CLI_TOKEN }}
+
+      - name: Pre-pull the container image
+        # kitchen.container.yml sets pull_platform_image: false and uses the
+        # local image, so pull explicitly here: it fails fast on a bad image
+        # reference and keeps registry auth/rate-limit handling in the docker
+        # CLI rather than kitchen-dokken's registry client.
+        run: docker pull "${{ matrix.suite == 'hardened' && env.HARDENED_CONTAINER_IMAGE || env.VANILLA_CONTAINER_IMAGE }}"
+
+      - name: Run kitchen test
+        continue-on-error: true
+        run: bundle exec kitchen test --destroy=always ${{ matrix.suite }}
+
+      - name: Save our ${{ matrix.suite }} results summary
+        continue-on-error: true
+        uses: mitre/saf_action@a19f76ed3721c14aa8a1afb8eded117d8bf16a5d  # v1.9.0
+        with:
+          command_string: "view summary -f json -i spec/results/${{ env.PLATFORM }}_${{ matrix.suite }}.json -o spec/results/${{ env.PLATFORM }}_${{ matrix.suite }}-data.json"
+
+      - name: Save Test Result JSON
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.PLATFORM }}_${{ matrix.suite }}.json
+          path: spec/results/
+
+      - name: Upload ${{ matrix.suite }} to Heimdall
+        continue-on-error: true
+        run: |
+          curl -# -s -F data=@spec/results/${{ env.PLATFORM }}_${{ matrix.suite }}.json \
+            -F "filename=${{ matrix.suite }}-${{ env.DEPLOYMENT }}-${{ matrix.hardening }}-${{ env.PLATFORM }}-${{ env.COMMIT_SHORT_SHA }}.json" \
+            -F "public=true" -F "evaluationTags=${{ env.COMMIT_SHORT_SHA }},${{ github.repository }},${{ github.workflow }},${{ matrix.suite }},${{ env.DEPLOYMENT }},${{ matrix.hardening }},${{ env.PLATFORM }}" \
+            -H "Authorization: Api-Key ${{ secrets.SAF_HEIMDALL_UPLOAD_KEY }}" \
+            "${{ vars.SAF_HEIMDALL_URL }}/evaluations"
+
+      - name: Display our ${{ matrix.suite }} results summary
+        uses: mitre/saf_action@a19f76ed3721c14aa8a1afb8eded117d8bf16a5d  # v1.9.0
+        with:
+          command_string: "view summary -i spec/results/${{ env.PLATFORM }}_${{ matrix.suite }}.json"
+
+      - name: Generate Markdown Summary
+        continue-on-error: true
+        id: generate-summary
+        run: |
+          cat spec/results/${{ env.PLATFORM }}_${{ matrix.suite }}-data.json | python .github/scripts/markdown-summary.py > spec/results/${{ env.PLATFORM }}_${{ matrix.suite }}-markdown-summary.md
+          cat spec/results/${{ env.PLATFORM }}_${{ matrix.suite }}-markdown-summary.md >> $GITHUB_STEP_SUMMARY
+
+      - name: Ensure the scan meets our ${{ matrix.suite }} results threshold
+        uses: mitre/saf_action@a19f76ed3721c14aa8a1afb8eded117d8bf16a5d  # v1.9.0
+        with:
+          command_string: "validate threshold -i spec/results/${{ env.PLATFORM }}_${{ matrix.suite }}.json --templateFile container_${{ matrix.suite }}.threshold.yml"

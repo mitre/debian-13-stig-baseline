@@ -1,0 +1,19 @@
+---
+# Bring a stock Debian 13 box up to date and install the utilities the profile
+# and the test harness expect. Debian's default repos work out of the box — no
+# registration step is needed (unlike the SLES profile's SCC dance).
+- name: Upgrade all packages
+  ansible.builtin.apt:
+    upgrade: dist
+    update_cache: true
+
+- name: Install required packages
+  ansible.builtin.apt:
+    name:
+      - jq
+      - vim
+      - bc
+      - unzip
+      - wget
+      - curl
+    state: present

@@ -1,0 +1,12 @@
+---
+# Inputs for the hardened Debian 13 container suite.
+#
+# Containers lack a running init system, kernel, bootloader, and many services a
+# full STIG assumes, so a number of controls are not applicable in this context.
+# The upstream Ubuntu 24.04 baseline exposes container-aware toggles (e.g.
+# allow_container_openssh_server); set them here as the overlay work determines
+# which apply, so the container scan reports cleanly rather than erroring on
+# absent subsystems.
+#
+# The hardened image is the Iron Bank Debian image; image-specific inputs
+# land here as its scan behavior is observed.

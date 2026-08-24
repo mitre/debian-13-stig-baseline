@@ -1,0 +1,17 @@
+roles:
+  # CIS benchmark remediation for Debian 13 — used by the hardened LXD suite
+  # because no DISA STIG remediation playbook exists for Debian. See
+  # ansible-role-debian-hardened.yml. Pinned to 1.0.1 (newest release); its
+  # min_ansible_version 2.16.1 is satisfied by the trixie kitchen venv's
+  # ansible-core 2.18 pin.
+  - name: DEBIAN13-CIS
+    src: https://github.com/ansible-lockdown/DEBIAN13-CIS
+    version: 1.0.1
+
+collections:
+  - name: community.general
+    source: https://galaxy.ansible.com
+  - name: community.crypto
+    source: https://galaxy.ansible.com
+  - name: ansible.posix
+    source: https://galaxy.ansible.com

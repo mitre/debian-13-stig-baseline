@@ -1,0 +1,120 @@
+---
+platforms:
+  - name: debian-13
+
+driver:
+  name: proxy
+  host: <%= ENV.fetch("KITCHEN_HOST") %>
+  username: <%= ENV.fetch("LXD_VM_USERNAME", "debian") %>
+  ssh_key: <%= ENV.fetch("KITCHEN_SSH_KEY") %>
+
+provisioner:
+  name: ansible_playbook
+  hosts: all
+  require_chef_for_busser: false
+  require_ruby_for_busser: false
+  # Do NOT let kitchen-ansible install Ansible via its distro installers; we
+  # provision a pinned ansible-core in a venv ourselves in pre_converge (see
+  # below) and point Kitchen at it.
+  require_ansible_repo: false
+  require_ansible_omnibus: false
+  require_ansible_source: false
+  require_pip: false
+  require_pip3: false
+  ansible_binary_path: /opt/ansible-venv/bin
+  ansible_connection: local
+  # Verbose ansible prints each task's full result, and package_facts emits
+  # that as a single multi-megabyte line — which GitHub truncates its step
+  # log at, hiding everything after it (including real failures). Ansible
+  # prints fatal/failed task output regardless of verbosity, so failure
+  # diagnostics survive without it.
+  ansible_verbose: false
+  roles_path: spec/ansible/roles
+  galaxy_ignore_certs: true
+  requirements_path: spec/ansible/roles/requirements.yml
+  requirements_collection_path: spec/ansible/roles/requirements.yml
+  ansible_extra_flags: <%= ENV['ANSIBLE_EXTRA_FLAGS'] %>
+
+suites:
+  - name: vanilla
+    provisioner:
+      playbook: spec/ansible/roles/ansible-role-debian-vanilla.yml
+    driver:
+      tags:
+        Name: Vanilla-<%= ENV['USER'] %>
+        CreatedBy: test-kitchen
+
+  - name: hardened
+    provisioner:
+      playbook: spec/ansible/roles/ansible-role-debian-hardened.yml
+    driver:
+      tags:
+        Name: Hardened-<%= ENV['USER'] %>
+        CreatedBy: test-kitchen
+
+lifecycle:
+  pre_converge:
+    - remote: |
+        echo "+++ Registering the hostname in /etc/hosts +++"
+        # The genericcloud image's hostname resolves nowhere, so every sudo
+        # stalls ~20s in name resolution before giving up. Register it first
+        # so the rest of this script (and the converge) runs at full speed.
+        grep -q "$(hostname)" /etc/hosts || echo "127.0.1.1 $(hostname)" | sudo tee -a /etc/hosts
+        echo ""
+        echo "+++ Refreshing and updating APT packages +++"
+        sudo apt-get update || true
+        sudo DEBIAN_FRONTEND=noninteractive apt-get -y upgrade || true
+        echo ""
+        echo "+++ Installing needed packages +++"
+        # Base tooling plus python3-venv/pip for the Ansible controller venv.
+        # Debian 13 (trixie) ships Python 3.13 as /usr/bin/python3; everything
+        # here is in the default trixie repos.
+        sudo DEBIAN_FRONTEND=noninteractive apt-get install -y bc dnsutils vim git wget gcc curl libffi-dev libssl-dev python3-venv python3-pip python3-apt locales || true
+        echo ""
+        echo "+++ Generating the en_US.UTF-8 locale +++"
+        # The CI runner exports LC_ALL=en_US.UTF-8 and openssh forwards it into
+        # every session (SendEnv/AcceptEnv LC_*), but the genericcloud image
+        # ships no generated locales — which ansible-core treats as fatal
+        # ("could not initialize the preferred locale"). Generate it.
+        sudo sed -i 's/^# *\(en_US.UTF-8 UTF-8\)/\1/' /etc/locale.gen
+        sudo locale-gen
+        echo ""
+        echo "+++ Installing a pinned ansible-core in a Python 3 virtualenv +++"
+        # Build the Ansible controller in a dedicated venv: deterministic binary
+        # path for kitchen-ansible and no PEP-668 externally-managed conflicts
+        # (trixie marks the system Python externally managed, so a venv is
+        # required for pip installs anyway). trixie's Python is 3.13; the
+        # ansible-core 2.18 series supports controller Python 3.11-3.13, which
+        # is current enough for modern hardening roles. Revisit if the
+        # hardening role needs a different series.
+        sudo python3 -m venv /opt/ansible-venv
+        sudo /opt/ansible-venv/bin/pip install --upgrade pip
+        sudo /opt/ansible-venv/bin/pip install "ansible-core>=2.18,<2.19"
+        # kitchen-ansible runs ansible-galaxy as a bare command (PATH lookup),
+        # not via ansible_binary_path, so expose the venv binaries on PATH.
+        sudo ln -sf /opt/ansible-venv/bin/ansible /opt/ansible-venv/bin/ansible-playbook /opt/ansible-venv/bin/ansible-galaxy /opt/ansible-venv/bin/ansible-doc /opt/ansible-venv/bin/ansible-config /usr/local/bin/
+        echo ""
+        echo "+++ Unlocking the kitchen user password +++"
+        # The image bake sets a password so the account is not locked, but
+        # cloud-init's first-boot handling of the image's default user
+        # (lock_passwd: true) re-locks it, which hardening-role prelims
+        # rightly refuse. Strip the lock; the baked password remains.
+        sudo usermod -U <%= ENV.fetch("LXD_VM_USERNAME", "debian") %>
+        echo "+++ Keeping the kitchen sudo user usable after the hardening phase +++"
+        sudo chage -d $(( $( date +%s ) / 86400 )) <%= ENV.fetch("LXD_VM_USERNAME", "debian") %> || true
+        echo ""
+        echo "+++ add cinc-auditor for local shell +++"
+        curl -L https://omnitruck.cinc.sh/install.sh | sudo bash -s -- -P cinc-auditor
+
+transport:
+  name: ssh
+  username: <%= ENV.fetch("LXD_VM_USERNAME", "debian") %>
+  ssh_key: <%= ENV.fetch("KITCHEN_SSH_KEY") %>
+  # https://github.com/neillturner/kitchen-ansible/issues/295
+  max_ssh_sessions: 2
+  # The genericcloud VM needs 1-3 minutes after launch before sshd listens
+  # (cloud-init probes for datasources it will never find, then generates the
+  # SSH host keys). The default budget of 5 retries x 1s gives up long before
+  # that, so allow up to 5 minutes.
+  connection_retries: 60
+  connection_retry_sleep: 5
