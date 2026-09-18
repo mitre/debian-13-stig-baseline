@@ -3,7 +3,7 @@ include_controls 'canonical-ubuntu-24.04-lts-stig-baseline' do
   # kernel-flag evidence but always fails; see README, "FIPS 140 on Debian".
   control 'SV-270744' do
     only_if('This control is Not Applicable to containers', impact: 0.0) {
-      !%w[docker podman kubepods lxc].include?(virtualization.system)
+      !virtualization.container_system?
     }
 
     describe kernel_parameter('crypto.fips_enabled') do
@@ -21,7 +21,7 @@ include_controls 'canonical-ubuntu-24.04-lts-stig-baseline' do
   # free Debian LTS to 2030-06-30, then Freexian Extended LTS to 2035-06-30.
   control 'SV-278917' do
     only_if('This control is Not Applicable to containers', impact: 0.0) {
-      !%w[docker podman kubepods lxc].include?(virtualization.system)
+      !virtualization.container_system?
     }
 
     describe 'Debian release identity' do
@@ -72,7 +72,7 @@ include_controls 'canonical-ubuntu-24.04-lts-stig-baseline' do
   # root; the upstream not-exist escape for journald-only systems is preserved.
   control 'SV-270769' do
     only_if('This control is Not Applicable to containers', impact: 0.0) {
-      !%w[docker podman kubepods lxc].include?(virtualization.system)
+      !virtualization.container_system?
     }
 
     describe.one do
@@ -89,7 +89,7 @@ include_controls 'canonical-ubuntu-24.04-lts-stig-baseline' do
   # /var/run/faillock, so the audit watch is retargeted there.
   control 'SV-270796' do
     only_if('This control is Not Applicable to containers', impact: 0.0) {
-      !%w[docker podman kubepods lxc].include?(virtualization.system)
+      !virtualization.container_system?
     }
 
     audit_target = '/var/run/faillock'
@@ -110,7 +110,7 @@ include_controls 'canonical-ubuntu-24.04-lts-stig-baseline' do
   # watch is retargeted to /var/lib/lastlog/lastlog2.db.
   control 'SV-270797' do
     only_if('This control is Not Applicable to containers', impact: 0.0) {
-      !%w[docker podman kubepods lxc].include?(virtualization.system)
+      !virtualization.container_system?
     }
 
     audit_target = '/var/lib/lastlog/lastlog2.db'
@@ -132,7 +132,7 @@ include_controls 'canonical-ubuntu-24.04-lts-stig-baseline' do
   # pure upstream.
   control 'SV-270810' do
     only_if('This control is Not Applicable to containers', impact: 0.0) {
-      !%w[docker podman kubepods lxc].include?(virtualization.system)
+      !virtualization.container_system?
     }
 
     audit_target = '/var/log/wtmp.db'
