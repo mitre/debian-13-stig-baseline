@@ -14,10 +14,7 @@ supports:
 depends:
   - name: canonical-ubuntu-24.04-lts-stig-baseline
     git: https://github.com/mitre/canonical-ubuntu-24.04-lts-stig-baseline.git
-    # Interim: track the upstream's open patch branch, which carries fixes
-    # this profile depends on (broken-test repairs, version correction).
-    # Replace with a tag pin once the branch merges and a release is cut.
-    branch: "1.4.1"
+    branch: main
 
 inputs:
   # Debian's cloud-image default user; sites override with their real admin
