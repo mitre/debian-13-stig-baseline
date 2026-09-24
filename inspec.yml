@@ -14,7 +14,7 @@ supports:
 depends:
   - name: canonical-ubuntu-24.04-lts-stig-baseline
     git: https://github.com/mitre/canonical-ubuntu-24.04-lts-stig-baseline.git
-    branch: main
+    tag: v1.4.2
 
 inputs:
   # Debian's cloud-image default user; sites override with their real admin
